@@ -1,7 +1,9 @@
-streamlit
-tensorflow
-scikit-learn
+streamlit==1.37.1
 pandas
 numpy
 matplotlib
+seaborn
+scikit-learn
+tensorflow==2.19.0
 joblib
+openpyxl
