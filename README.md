@@ -1,54 +1,19 @@
-# 🚦 Smart Traffic Flow Prediction Using BiLSTM
-*A Machine Learning Framework for Sustainable Traffic Management in Accra, Ghana*
+# 🚦 MTech Thesis — Intelligent Traffic Flow Prediction System
 
----
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/ivan-ataaya/mtech_traffic_flow/main/app.py)
 
-## 🧠 Overview
+![Python](https://img.shields.io/badge/Python-3.10-blue.svg)
+![Streamlit](https://img.shields.io/badge/Streamlit-1.38.0-FF4B4B.svg)
+![License](https://img.shields.io/badge/License-MIT-green.svg)
+![Status](https://img.shields.io/badge/Status-Deployed-success.svg)
 
-This repository contains the full implementation of the **MTech Thesis Project** titled:  
-**“Machine Learning Traffic Flow Prediction Models for Smart and Sustainable Traffic Management”**  
-submitted to the **Department of Applied Mathematics and Statistics**,  
-**Accra Technical University**  
-by **Evans Ataaya**, in partial fulfillment of the requirements for the award of the  
-**Master of Technology (MTech) in Data Science and Industrial Analytics.**
+This project implements a real-time traffic flow prediction system using both machine learning (SVM, Random Forest) and deep learning (LSTM, BiLSTM) models.  
+It supports interactive visual analytics and dataset uploads for dynamic evaluation.  
 
----
+### 📊 Features
+- Multi-model performance comparison (Linear, Tree, SVM, LSTM, BiLSTM)
+- Interactive dashboards for prediction and visualization
+- Dataset upload support for new test data
+- Streamlit deployment for real-time inference
 
-## 🎯 Objectives
-
-The purpose of this work is to:
-- Develop a **machine learning and deep learning framework** for short-term traffic flow prediction.  
-- Compare the performance of Logistic Regression, SVM, LSTM, and BiLSTM models.  
-- Deploy an interactive **Streamlit Dashboard** for real-time traffic forecasting and visualization.
-
----
-
-## 🧩 Architecture
-
-The dashboard uses:
-- **Frontend:** Streamlit (for interactive visualization)
-- **Backend:** Python (TensorFlow, Scikit-learn)
-- **Model:** Bidirectional Long Short-Term Memory (BiLSTM)
-- **Dataset:** Accra Metropolitan Traffic Sensor Dataset (2025)
-
----
-
-## 🧰 Tools and Libraries
-
-| Library | Purpose |
-|----------|----------|
-| Streamlit | Web dashboard interface |
-| TensorFlow / Keras | Deep Learning model development |
-| Scikit-learn | Machine Learning algorithms |
-| Pandas & NumPy | Data preprocessing and analysis |
-| Matplotlib | Visualization |
-| Joblib | Model serialization |
-
----
-
-## ⚙️ Setup Instructions
-
-### Clone this Repository
-```bash
-git clone https://github.com/[YourGitHubUsername]/MTech_Traffic_Flow.git
-cd MTech_Traffic_Flow
+🔗 [**Live App on Streamlit**](https://share.streamlit.io/ivan-ataaya/mtech_traffic_flow/main/app.py)
