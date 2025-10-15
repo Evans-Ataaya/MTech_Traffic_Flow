@@ -42,14 +42,17 @@ def load_bilstm_model():
     model = None
     try:
         if os.path.exists("bilstm_traffic_model.h5"):
+            st.info("Loading model: bilstm_traffic_model.h5")
             model = load_model("bilstm_traffic_model.h5", compile=False)
         elif os.path.exists("bilstm_traffic_model.keras"):
+            st.info("Loading model: bilstm_traffic_model.keras")
             model = load_model("bilstm_traffic_model.keras", compile=False)
         else:
             st.error("❌ No model file found (bilstm_traffic_model.h5 or .keras)")
     except Exception as e:
         st.error(f"⚠️ Error loading model: {e}")
     return model
+
 
 # ---------- CREATE TABS ----------
 tabs = st.tabs([

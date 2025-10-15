@@ -1,35 +1,34 @@
-# ---------------------------------------------------------
+# =========================================================
 # SMART TRAFFIC FLOW PREDICTION DASHBOARD
-# ---------------------------------------------------------
+# =========================================================
 # Developed by: Evans Ataaya
-# Supervised by: Dr. Martin O. Amoamah
-# ---------------------------------------------------------
+# Supervisor: Dr. Martin Amoamah
+# =========================================================
 
-# ========== IMPORT LIBRARIES ==========
+# ---------- IMPORT LIBRARIES ----------
 import streamlit as st
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
 import joblib
+import os
 from tensorflow.keras.models import load_model
 
-# ========== PAGE CONFIGURATION ==========
+# ---------- PAGE CONFIGURATION ----------
 st.set_page_config(
     page_title="Smart Traffic Flow Prediction",
     page_icon="🚦",
     layout="wide"
 )
 
-# ========== HEADER ==========
+# ---------- HEADER ----------
 st.title("🚦 Smart Traffic Flow Prediction Dashboard")
 st.markdown("""
-### Masters of Technology (MTech) — Data Science and Industrial Analytics  
-**Accra Technical University**  
 *Machine Learning Traffic Flow Prediction Models for Smart and Sustainable Traffic Management*
 """)
 
-# ========== LOAD DEFAULT DATA ==========
+# ---------- LOAD DEFAULT DATA ----------
 @st.cache_data
 def load_data():
     df = pd.read_excel("TRAFFIC DATASET.xlsx")
@@ -37,7 +36,25 @@ def load_data():
 
 df = load_data()
 
-# ========== CREATE TABS ==========
+# ---------- LOAD MODEL SAFELY ----------
+def load_bilstm_model():
+    """Loads BiLSTM model safely, supporting both .h5 and .keras formats."""
+    model = None
+    try:
+        if os.path.exists("bilstm_traffic_model.h5"):
+            st.info("Loading model: bilstm_traffic_model.h5")
+            model = load_model("bilstm_traffic_model.h5", compile=False)
+        elif os.path.exists("bilstm_traffic_model.keras"):
+            st.info("Loading model: bilstm_traffic_model.keras")
+            model = load_model("bilstm_traffic_model.keras", compile=False)
+        else:
+            st.error("❌ No model file found (bilstm_traffic_model.h5 or .keras)")
+    except Exception as e:
+        st.error(f"⚠️ Error loading model: {e}")
+    return model
+
+
+# ---------- CREATE TABS ----------
 tabs = st.tabs([
     "🏠 Dashboard Overview",
     "📊 Data Exploration",
@@ -47,19 +64,23 @@ tabs = st.tabs([
     "ℹ️ About"
 ])
 
-# ========== TAB 1: DASHBOARD OVERVIEW ==========
+# =========================================================
+# 🏠 TAB 1: DASHBOARD OVERVIEW
+# =========================================================
 with tabs[0]:
     st.header("🏠 Overview")
     st.markdown("""
     This dashboard demonstrates real-time prediction and analytical visualization of traffic flow
     using advanced machine learning models (Logistic Regression, SVM, LSTM, and BiLSTM).
     """)
-    
+
     col1, col2 = st.columns(2)
+
     with col1:
         avg_speed = st.slider("Average Speed (km/h)", 0.0, 120.0, 45.0)
         occupancy = st.slider("Lane Occupancy (%)", 0.0, 100.0, 50.0)
         precipitation = st.slider("Precipitation (mm)", 0.0, 50.0, 0.0)
+
     with col2:
         weekend = st.selectbox("Is it Weekend?", ["No", "Yes"])
         peak = st.selectbox("Peak Hour?", ["No", "Yes"])
@@ -67,30 +88,35 @@ with tabs[0]:
 
     if st.button("🚀 Predict Traffic Volume"):
         scaler = joblib.load("scaler.pkl")
-        model = load_model("bilstm_traffic_model.keras")
+        model = load_bilstm_model()
 
-        input_data = pd.DataFrame([{
-            'avg_speed_kmph': avg_speed,
-            'occupancy_pct': occupancy,
-            'precipitation_mm': precipitation,
-            'is_weekend': 1 if weekend == "Yes" else 0,
-            'is_peak': 1 if peak == "Yes" else 0,
-            'hour': hour
-        }])
+        if model:
+            input_data = pd.DataFrame([{
+                'avg_speed_kmph': avg_speed,
+                'occupancy_pct': occupancy,
+                'precipitation_mm': precipitation,
+                'is_weekend': 1 if weekend == "Yes" else 0,
+                'is_peak': 1 if peak == "Yes" else 0,
+                'hour': hour
+            }])
 
-        scaled = scaler.transform(input_data)
-        prediction = model.predict(scaled)[0][0]
+            scaled = scaler.transform(input_data)
+            scaled = np.reshape(scaled, (scaled.shape[0], 1, scaled.shape[1]))
 
-        if prediction < 100:
-            level = "🟢 Low Traffic"
-        elif prediction < 200:
-            level = "🟡 Moderate Traffic"
-        else:
-            level = "🔴 Heavy Traffic"
+            prediction = model.predict(scaled)[0][0]
 
-        st.success(f"### Predicted Traffic Volume: **{prediction:.2f}** ({level})")
+            if prediction < 100:
+                level = "🟢 Low Traffic"
+            elif prediction < 200:
+                level = "🟡 Moderate Traffic"
+            else:
+                level = "🔴 Heavy Traffic"
 
-# ========== TAB 2: DATA EXPLORATION ==========
+            st.success(f"### Predicted Traffic Volume: **{prediction:.2f}** ({level})")
+
+# =========================================================
+# 📊 TAB 2: DATA EXPLORATION
+# =========================================================
 with tabs[1]:
     st.header("📊 Explore Traffic Dataset")
     st.dataframe(df.head())
@@ -99,26 +125,37 @@ with tabs[1]:
     st.write(df.describe())
 
     st.subheader("Traffic Volume Over Time")
-    fig, ax = plt.subplots()
-    ax.plot(df["timestamp"], df["traffic_volume"], color="teal")
-    ax.set_xlabel("Timestamp")
-    ax.set_ylabel("Traffic Volume")
-    st.pyplot(fig)
+    if "timestamp" in df.columns:
+        fig, ax = plt.subplots()
+        ax.plot(df["timestamp"], df["traffic_volume"], color="teal")
+        ax.set_xlabel("Timestamp")
+        ax.set_ylabel("Traffic Volume")
+        st.pyplot(fig)
+    else:
+        st.warning("⚠️ No 'timestamp' column found in dataset.")
 
-# ========== TAB 3: CORRELATION & FEATURE INSIGHTS ==========
+# =========================================================
+# 📈 TAB 3: CORRELATION & FEATURE INSIGHTS
+# =========================================================
 with tabs[2]:
     st.header("📈 Correlation and Feature Insights")
-
     corr = df.corr(numeric_only=True)
-    fig, ax = plt.subplots(figsize=(8,5))
+    fig, ax = plt.subplots(figsize=(8, 5))
     sns.heatmap(corr, annot=True, cmap="coolwarm", ax=ax)
     st.pyplot(fig)
 
     st.subheader("Feature Relationships (Pair Plot)")
-    pair_fig = sns.pairplot(df[['traffic_volume','avg_speed_kmph','occupancy_pct','precipitation_mm']])
-    st.pyplot(pair_fig)
+    feature_cols = ['traffic_volume', 'avg_speed_kmph', 'occupancy_pct', 'precipitation_mm']
+    available = [col for col in feature_cols if col in df.columns]
+    if len(available) > 2:
+        pair_fig = sns.pairplot(df[available])
+        st.pyplot(pair_fig)
+    else:
+        st.info("Not enough features available for pairplot.")
 
-# ========== TAB 4: MODEL PERFORMANCE ==========
+# =========================================================
+# 🤖 TAB 4: MODEL PERFORMANCE
+# =========================================================
 with tabs[3]:
     st.header("🤖 Model Performance Comparison")
 
@@ -137,42 +174,50 @@ with tabs[3]:
     ax.set_title("Model RMSE Comparison")
     st.pyplot(fig)
 
-# ========== TAB 5: UPLOAD NEW DATA & PREDICT ==========
+# =========================================================
+# 📤 TAB 5: UPLOAD NEW DATA & PREDICT
+# =========================================================
 with tabs[4]:
     st.header("📤 Upload New Data for Prediction")
-    uploaded_file = st.file_uploader("Upload your traffic dataset (CSV or Excel)", type=["csv","xlsx"])
+    uploaded_file = st.file_uploader("Upload your traffic dataset (CSV or Excel)", type=["csv", "xlsx"])
 
     if uploaded_file:
-        if uploaded_file.name.endswith('.csv'):
-            new_data = pd.read_csv(uploaded_file)
-        else:
-            new_data = pd.read_excel(uploaded_file)
-
-        st.write("Preview of Uploaded Data:")
-        st.dataframe(new_data.head())
-
         try:
+            if uploaded_file.name.endswith('.csv'):
+                new_data = pd.read_csv(uploaded_file)
+            else:
+                new_data = pd.read_excel(uploaded_file)
+
+            st.write("Preview of Uploaded Data:")
+            st.dataframe(new_data.head())
+
             scaler = joblib.load("scaler.pkl")
-            model = load_model("bilstm_traffic_model.keras")
+            model = load_bilstm_model()
 
-            features = ['avg_speed_kmph','occupancy_pct','precipitation_mm','is_weekend','is_peak','hour']
-            X_new = scaler.transform(new_data[features])
-            predictions = model.predict(X_new)
-            new_data['Predicted_Traffic_Volume'] = predictions
+            if model:
+                features = ['avg_speed_kmph', 'occupancy_pct', 'precipitation_mm', 'is_weekend', 'is_peak', 'hour']
+                X_new = scaler.transform(new_data[features])
+                X_new = np.reshape(X_new, (X_new.shape[0], 1, X_new.shape[1]))
 
-            st.success("✅ Predictions completed!")
-            st.dataframe(new_data)
+                predictions = model.predict(X_new)
+                new_data['Predicted_Traffic_Volume'] = predictions
 
-            st.download_button(
-                label="⬇️ Download Predictions as CSV",
-                data=new_data.to_csv(index=False).encode('utf-8'),
-                file_name='predicted_traffic_volume.csv',
-                mime='text/csv'
-            )
+                st.success("✅ Predictions completed!")
+                st.dataframe(new_data)
+
+                st.download_button(
+                    label="⬇️ Download Predictions as CSV",
+                    data=new_data.to_csv(index=False).encode('utf-8'),
+                    file_name='predicted_traffic_volume.csv',
+                    mime='text/csv'
+                )
+
         except Exception as e:
-            st.error(f"Error during prediction: {e}")
+            st.error(f"⚠️ Error during prediction: {e}")
 
-# ========== TAB 6: ABOUT ==========
+# =========================================================
+# ℹ️ TAB 6: ABOUT
+# =========================================================
 with tabs[5]:
     st.header("ℹ️ About this Dashboard")
     st.markdown("""
@@ -181,14 +226,14 @@ with tabs[5]:
     It leverages machine learning (Logistic Regression, SVM, LSTM, BiLSTM) to provide  
     real-time forecasts for intelligent traffic management.
 
-    **Input Features**  
-    - Average Speed (km/h)  
-    - Lane Occupancy (%)  
-    - Precipitation (mm)  
-    - Is Weekend / Peak Hour / Hour of Day  
+    **Input Features**
+    - Average Speed (km/h)
+    - Lane Occupancy (%)
+    - Precipitation (mm)
+    - Is Weekend / Peak Hour / Hour of Day
 
-    **Output**  
-    - Predicted Traffic Volume  
+    **Output**
+    - Predicted Traffic Volume
     - Traffic Condition Level (Low / Moderate / High)
 
     **Best Performing Model:** BiLSTM (R² = 0.93)
